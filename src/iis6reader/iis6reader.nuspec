@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>maestropanel.iis6reader</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Oguzhan YILMAZ</authors>
+    <owners>MaestroPanel</owners>
+    <licenseUrl>https://github.com/maestropanel/iis6reader/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/maestropanel/iis6reader</projectUrl>
+    <iconUrl>https://www.maestropanel.com/Content/img/maestropanel-logo-shadow.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>IIS 6 .NET Data Reader Adaptor</description>
+    <releaseNotes>Get all IIS 6 site informations</releaseNotes>
+    <copyright>Copyright 2016 MaestroPanel</copyright>
+    <tags>iis iis6</tags>
+  </metadata>
+</package>
