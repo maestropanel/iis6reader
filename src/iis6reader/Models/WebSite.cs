@@ -12,7 +12,10 @@
         public WebSiteCustomHeader[] Headers { get; set; }
         public WebSiteMimeType[] MimeTypes { get; set; }
         public WebSiteCustomError[] HttpErrors { get; set; }
-        public WebSiteBinding[] Bindings { get; set; }    
+        public WebSiteBinding[] Bindings { get; set; }
+
+        public string UserName { get; set; }
+        public string Password { get; set; }
     }
 
     public class WebSiteBinding

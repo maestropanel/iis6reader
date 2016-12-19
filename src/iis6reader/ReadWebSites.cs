@@ -37,6 +37,8 @@
                     var d = new WebSite();
                     d.Name = data.GetValue<string>(item, "ServerComment");
                     d.MetaName = data.GetValue<string>(item, "Name");
+                    d.UserName = data.GetValue<string>(item, "AnonymousUserName");
+                    d.Password = data.GetValue<string>(item, "AnonymousUserPass");
 
                     GetDomainPath(d.MetaName, out domainPath, out customErrors, out customHeaders, out customMimes);
 
