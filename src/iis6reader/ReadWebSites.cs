@@ -19,7 +19,6 @@
         public List<WebSite> GetAllDomains(string where = "")
         {
             var tmp = new List<WebSite>();
-
             var _query = "SELECT * FROM IIsWebServerSetting";
 
             if (!String.IsNullOrEmpty(where))
@@ -39,7 +38,8 @@
                     d.MetaName = data.GetValue<string>(item, "Name");
                     d.UserName = data.GetValue<string>(item, "AnonymousUserName");
                     d.Password = data.GetValue<string>(item, "AnonymousUserPass");
-
+                    
+                                        
                     GetDomainPath(d.MetaName, out domainPath, out customErrors, out customHeaders, out customMimes);
 
                     d.HttpErrors = customErrors;
@@ -50,6 +50,21 @@
                     d.EnableSSL = isSSLEnabled(item);
                     d.Bindings = GetDomainBindings(item);
 
+                    var secureBindings = GetDomainSecureBindings(item);
+
+                    if (secureBindings.Any())
+                    {
+                        d.EnableSSL = true;
+
+                        var list = d.Bindings.ToList();
+                        list.AddRange(secureBindings);
+
+                        d.Bindings = list.ToArray();
+                    }
+
+                    if (d.EnableSSL)                    
+                        d.SSLCertHash = GetCertificateHash(d.MetaName);
+                    
                     tmp.Add(d);
                 }
             }
@@ -101,8 +116,36 @@
             foreach (ManagementBaseObject bind in bindins)
             {
                 var b = new WebSiteBinding();
+                b.isSecure = false;
                 b.Hostname = data.GetValue<string>(bind, "Hostname");
                 b.Port = data.GetValue<string>(bind, "Port");
+                b.IpAddr = data.GetValue<string>(bind, "IP");
+
+                currentBinding.Add(b);
+            }
+
+            return currentBinding.ToArray();
+        }
+
+        private WebSiteBinding[] GetDomainSecureBindings(ManagementObject item)
+        {
+            var currentBinding = new List<WebSiteBinding>();
+
+            if (item == null)
+                return currentBinding.ToArray();
+
+            var bindins = data.GetValue<ManagementBaseObject[]>(item, "SecureBindings");
+
+            if (bindins == null)
+                return currentBinding.ToArray();
+
+            foreach (ManagementBaseObject bind in bindins)
+            {
+                var b = new WebSiteBinding();
+                b.isSecure = true;
+                b.Hostname = data.GetValue<string>(bind, "Hostname");
+                b.Port = data.GetValue<string>(bind, "Port");
+                b.IpAddr = data.GetValue<string>(bind, "IP");
 
                 currentBinding.Add(b);
             }
@@ -627,6 +670,40 @@
             list.Add(".mka");
 
             return list;
+        }
+
+        private string GetCertificateHash(string metaname)
+        {
+            var certhash = String.Empty;
+            var _query = String.Format("SELECT * FROM IIsWebServer WHERE Name='{0}'", metaname);
+
+            using (var query = data.GetProperties(_query))
+            {
+                foreach (ManagementObject item in query)
+                {
+                    var hash = data.GetValue<byte[]>(item, "SSLCertHash");
+
+                    if (hash != null)
+                    {
+                        certhash = ConvertToSidString(hash);
+                        break;
+                    }
+                }
+            }
+
+            return certhash;
+        }
+
+        private string ConvertToSidString(byte[] hash)
+        {            
+            string sidBindString = "";
+
+            foreach (byte b in hash)
+            {
+                sidBindString += String.Format("{0:X2}", b);
+            }
+
+            return sidBindString;
         }
     }
 }

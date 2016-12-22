@@ -16,12 +16,15 @@
 
         public string UserName { get; set; }
         public string Password { get; set; }
+        public string SSLCertHash { get; set; }
     }
 
     public class WebSiteBinding
     {
+        public bool isSecure { get; set; } //SecureBindings
         public string Hostname { get; set; }
         public string Port { get; set; }
+        public string IpAddr { get; set; }
     }
 
     public class WebSiteCustomHeader
