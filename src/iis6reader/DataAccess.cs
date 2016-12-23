@@ -3,7 +3,7 @@
     using System;
     using System.Management;
 
-    public class DataAccess
+    internal class DataAccess
     {
 
         public ManagementObjectCollection GetProperties(string query)
