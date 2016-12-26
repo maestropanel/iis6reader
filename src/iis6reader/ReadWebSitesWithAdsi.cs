@@ -38,7 +38,9 @@
                             bindings.AddRange(serverBindings);
 
                         if (secureBindings.Length > 0)
-                            bindings.AddRange(secureBindings);                        
+                            bindings.AddRange(secureBindings);
+
+                        d.Headers = GetWebSiteCustomHeader(de.Properties["HttpCustomHeaders"]);                              
                         
                         list.Add(d);
                     }
@@ -126,9 +128,29 @@
             return list.ToArray();
         }
 
-        //private WebSiteCustomHeader[] GetWebSiteCustomHeader(PropertyValueCollection headers)
-        //{
+        private WebSiteCustomHeader[] GetWebSiteCustomHeader(PropertyValueCollection headers)
+        {
 
-        //}
+            var list = new List<WebSiteCustomHeader>();
+
+            if (headers == null)
+                return list.ToArray();
+
+            foreach (var item in headers)
+            {
+                var keyvalue = item.ToString().Split(':');
+                if (keyvalue.Length == 2)
+                {
+                    var ch = new WebSiteCustomHeader();
+                    ch.Name = keyvalue[0].Trim();
+                    ch.Value = keyvalue[1].Trim();
+
+                    list.Add(ch);
+                }                
+            }
+
+            return list.ToArray();
+
+        }
     }    
 }

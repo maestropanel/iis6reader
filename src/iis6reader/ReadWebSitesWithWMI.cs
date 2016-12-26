@@ -7,11 +7,11 @@
     using System.Linq;
     using System.Management;
 
-    public class ReadWebSites
+    public class ReadWebSitesWithWMI
     {
         private DataAccess data;
 
-        public ReadWebSites()
+        public ReadWebSitesWithWMI()
         {
             data = new DataAccess();
         }
