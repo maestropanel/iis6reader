@@ -17,7 +17,7 @@
             return new ManagementObjectSearcher("root\\MicrosoftIISv2", query);
         }
 
-        public T GetValue<T>(ManagementObject source, string name)
+        private T GetValue<T>(ManagementObject source, string name)
         {
             var def = default(T);
 

@@ -7,7 +7,7 @@
 
     public class ReadWebSitesWithAdsi
     {
-        public List<WebSite> GetAllDomains(string where = "")
+        public List<WebSite> GetAllDomains()
         {
             var list = new List<WebSite>();
 
@@ -16,19 +16,15 @@
                 foreach (DirectoryEntry de in w3svc.Children)
                 {
                     if (de.SchemaClassName == "IIsWebServer")
-                    {
-                        var wwwPath = String.Empty;
+                    {                        
                         var d = new WebSite();
                         d.Name = GetValue<string>(de.Properties, "ServerComment");
                         d.MetaName = de.Name;
                         d.UserName = GetValue<string>(de.Properties, "AnonymousUserName");
-                        d.Password = GetValue<string>(de.Properties, "AnonymousUserPass");
-                        d.EnableDirBrowsing = false;
+                        d.Password = GetValue<string>(de.Properties, "AnonymousUserPass");                        
+                        d.Path = GetDomainPath(d.MetaName);
 
-                        GetDomainPath(d.MetaName, out wwwPath);
-
-                        d.Path = wwwPath;                        
-                        
+                        var serverState = GetValue<int>(de.Properties, "ServerState");
                         var serverBindings = GetWebSiteBindings(de.Properties["ServerBindings"]);
                         var secureBindings = GetWebSiteBindings(de.Properties["SecureBindings"], secureBinding: true);
 
@@ -38,9 +34,15 @@
                             bindings.AddRange(serverBindings);
 
                         if (secureBindings.Length > 0)
+                        {
                             bindings.AddRange(secureBindings);
+                            d.EnableSSL = true;
+                        }
 
-                        d.Headers = GetWebSiteCustomHeader(de.Properties["HttpCustomHeaders"]);                              
+                        d.Headers = GetWebSiteCustomHeader(de.Properties["HttpCustomHeaders"]);
+                        d.HttpErrors = GetWebSiteCustomErrors(de.Properties["HttpErrors"]);
+                        d.SSLCertHash = GetCertificateHash(de.Properties["SSLCertHash"]);
+                        d.State = serverState.ToString();
                         
                         list.Add(d);
                     }
@@ -50,7 +52,7 @@
             return list;
         }
 
-        public T GetValue<T>(PropertyCollection source, string name)
+        private T GetValue<T>(PropertyCollection source, string name)
         {
             var def = default(T);
 
@@ -87,17 +89,22 @@
             return exists;
         }
 
-        private void GetDomainPath(string metaname, out string path)
+        private string GetDomainPath(string metaname)
         {
-            path = String.Empty;
+            var path = String.Empty;
 
             using (DirectoryEntry w3svc = new DirectoryEntry(String.Format("IIS://localhost/W3SVC/{0}", metaname)))
             {
                 foreach (DirectoryEntry de in w3svc.Children)
-                {
+                {                    
                     path = GetValue<string>(de.Properties, "Path");
+
+                    if (de.Name == "Path")
+                        break;
                 }
             }
+
+            return path;
         }
 
         private WebSiteBinding[] GetWebSiteBindings(PropertyValueCollection bindings, bool secureBinding = false)
@@ -151,6 +158,52 @@
 
             return list.ToArray();
 
+        }
+
+        private WebSiteCustomError[] GetWebSiteCustomErrors(PropertyValueCollection errors)
+        {
+            var list = new List<WebSiteCustomError>();
+
+            if (errors == null)
+                return list.ToArray();
+
+            //404,*,URL,/404.asp
+            foreach (var item in errors)
+            {
+                var customPage = item.ToString().Split(',');
+                if (customPage.Length == 4)
+                {
+                    var err = new WebSiteCustomError();
+                    err.HandlerLocation = customPage[3];
+                    err.HandlerType = customPage[2];
+                    err.HttpErrorCode = customPage[0];
+
+                    if (err.HandlerType == "URL")
+                    {
+                        err.HandlerType = "ExecuteURL";
+                        list.Add(err);
+                    }                    
+                }
+            }
+
+            return list.ToArray();
+        }
+
+        private string GetCertificateHash(PropertyValueCollection property)
+        {
+            if (property == null)
+                return String.Empty;
+
+            if (property.Value == null)
+                return String.Empty;
+
+            var values = (Object[])property.Value;
+            var certHash = String.Empty;
+
+            foreach (var item in values)            
+                certHash += item.ToString();
+            
+            return certHash;
         }
     }    
 }
