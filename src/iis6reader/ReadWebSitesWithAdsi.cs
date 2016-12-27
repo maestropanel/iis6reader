@@ -1,11 +1,12 @@
 ﻿namespace maestropanel.iis6reader
 {
     using maestropanel.iis6reader.Models;
+    using Microsoft.Win32;
     using System;
     using System.Collections.Generic;
     using System.DirectoryServices;
 
-    public class ReadWebSitesWithAdsi
+    internal class ReadWebSitesWithAdsi : IReadWebSite
     {
         public List<WebSite> GetAllDomains()
         {
@@ -204,6 +205,11 @@
                 certHash += item.ToString();
             
             return certHash;
+        }
+        
+        public List<WebSite> GetAllDomains(string where = "")
+        {            
+            return GetAllDomains();
         }
     }    
 }

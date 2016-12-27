@@ -7,7 +7,7 @@
     using System.Linq;
     using System.Management;
 
-    public class ReadWebSitesWithWMI
+    internal class ReadWebSitesWithWMI : IReadWebSite
     {
         private DataAccess data;
 
@@ -69,11 +69,6 @@
             }
 
             return tmp;
-        }
-
-        public bool IsInstalled()
-        {
-            return Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\InetStp", false) == null ? false : true;
         }
 
         private void GetDomainPath(string metaName, out string domainPath, out WebSiteCustomError[] errors, out WebSiteCustomHeader[] headers, out WebSiteMimeType[] mimes)
@@ -703,6 +698,11 @@
             }
 
             return sidBindString;
+        }
+
+        public List<WebSite> GetAllDomains()
+        {
+            return GetAllDomains();
         }
     }
 }
