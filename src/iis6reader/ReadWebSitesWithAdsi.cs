@@ -40,6 +40,7 @@
                             d.EnableSSL = true;
                         }
 
+                        d.Bindings = bindings.ToArray();
                         d.Headers = GetWebSiteCustomHeader(de.Properties["HttpCustomHeaders"]);
                         d.HttpErrors = GetWebSiteCustomErrors(de.Properties["HttpErrors"]);
                         d.SSLCertHash = GetCertificateHash(de.Properties["SSLCertHash"]);
@@ -201,8 +202,15 @@
             var values = (Object[])property.Value;
             var certHash = String.Empty;
 
-            foreach (var item in values)            
-                certHash += item.ToString();
+            foreach (var item in values)
+            {
+                var itemstr = item.ToString();
+
+                if (itemstr.Length == 1)
+                    itemstr = String.Format("0{0}", itemstr);
+
+                certHash += itemstr.ToString();
+            }
             
             return certHash;
         }
