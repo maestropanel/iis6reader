@@ -24,7 +24,7 @@
                         d.UserName = GetValue<string>(de.Properties, "AnonymousUserName");
                         d.Password = GetValue<string>(de.Properties, "AnonymousUserPass");                        
                         d.Path = GetDomainPath(d.MetaName);
-
+                        
                         var serverState = GetValue<int>(de.Properties, "ServerState");
                         var serverBindings = GetWebSiteBindings(de.Properties["ServerBindings"]);
                         var secureBindings = GetWebSiteBindings(de.Properties["SecureBindings"], secureBinding: true);
@@ -38,6 +38,15 @@
                         {
                             bindings.AddRange(secureBindings);
                             d.EnableSSL = true;
+                        }
+
+                        var rootApp = GetRoot(de.Children);
+                        if (rootApp != null)
+                        {
+                            var vlist = GetVirtualDirectories("", rootApp.Children, "");
+
+                            if (vlist.Count > 0)
+                                d.VirtualDirectories = vlist.ToArray();
                         }
 
                         d.Bindings = bindings.ToArray();
@@ -189,7 +198,7 @@
             }
 
             return list.ToArray();
-        }
+        }    
 
         private string GetCertificateHash(PropertyValueCollection property)
         {
@@ -218,6 +227,57 @@
         public List<WebSite> GetAllDomains(string where = "")
         {            
             return GetAllDomains();
+        }
+
+        private DirectoryEntry GetRoot(DirectoryEntries children)
+        {
+            DirectoryEntry _root = null;
+
+            foreach (DirectoryEntry item in children)
+            {
+
+                if (item.Name == "ROOT" && item.SchemaClassName == "IIsWebVirtualDir")
+                {
+                    _root = item;
+                    break;
+                }
+            }
+
+            return _root;
+        }
+
+        private List<WebSiteVirtualDirectory> GetVirtualDirectories(string parentPath, DirectoryEntries children, string parentKey)
+        {
+            var list = new List<WebSiteVirtualDirectory>();
+
+            foreach (DirectoryEntry item in children)
+            {
+                if (item.SchemaClassName != "IIsWebVirtualDir")
+                    continue;
+
+                if (item.Name.StartsWith("_vti"))
+                    continue;
+
+                if (item.Name.Equals("aspnet_client"))
+                    continue;
+
+                if (item.Name.Equals("_private"))
+                    continue;
+
+                var virtualPath = String.Format("{0}/{1}", parentPath, item.Name);
+
+                Console.WriteLine(virtualPath);
+
+                var l = new WebSiteVirtualDirectory();
+                l.Name = virtualPath;
+                l.Path = GetValue<string>(item.Properties, "Path");
+
+                list.Add(l);
+
+                list.AddRange(GetVirtualDirectories(virtualPath, item.Children, item.Name));
+            }
+
+            return list;
         }
     }    
 }

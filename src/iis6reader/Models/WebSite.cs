@@ -13,6 +13,7 @@
         public WebSiteMimeType[] MimeTypes { get; set; }
         public WebSiteCustomError[] HttpErrors { get; set; }
         public WebSiteBinding[] Bindings { get; set; }
+        public WebSiteVirtualDirectory[] VirtualDirectories { get; set; }
 
         public string UserName { get; set; }
         public string Password { get; set; }
@@ -45,5 +46,11 @@
         public string HandlerType { get; set; }
         public string HttpErrorCode { get; set; }
         public string HttpErrorSubcode { get; set; }
+    }
+
+    public class WebSiteVirtualDirectory
+    {        
+        public string Name { get; set; }
+        public string Path { get; set; }        
     }
 }
