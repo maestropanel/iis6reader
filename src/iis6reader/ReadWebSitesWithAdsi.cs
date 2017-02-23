@@ -41,6 +41,7 @@
                         }
 
                         var rootApp = GetRoot(de.Children);
+
                         if (rootApp != null)
                         {
                             var vlist = GetVirtualDirectories("", rootApp.Children, "");

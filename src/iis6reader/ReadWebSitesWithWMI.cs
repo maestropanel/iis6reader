@@ -24,6 +24,9 @@
             if (!String.IsNullOrEmpty(where))
                 _query += " WHERE " + where;
 
+
+            var virtualDirs = LoadVirtualDirectories();
+
             using (var query = data.GetProperties(_query))
             {
                 foreach (ManagementObject item in query)
@@ -50,8 +53,8 @@
                     d.Bindings = GetDomainBindings(item);
 
                     var secureBindings = GetDomainSecureBindings(item);
-
-                    if (secureBindings.Any())
+                    
+                    if (secureBindings.Any())  
                     {
                         d.EnableSSL = true;
 
@@ -60,6 +63,8 @@
 
                         d.Bindings = list.ToArray();
                     }
+
+                    d.VirtualDirectories = SearchInVirtualDirectories(d.MetaName, virtualDirs);
 
                     if (d.EnableSSL)                    
                         d.SSLCertHash = GetCertificateHash(d.MetaName);
@@ -84,7 +89,7 @@
             using (var query = data.GetProperties(_query))
             {
                 foreach (ManagementObject item in query)
-                {
+                {                    
                     domainPath = data.GetValue<string>(item, "Path");
                     errors = GetErrorPages(item);
                     headers = GetCustomHeaders(item);
@@ -93,6 +98,34 @@
                     break;
                 }
             }
+        }
+
+        private WebSiteVirtualDirectory[] SearchInVirtualDirectories(string metaName,  List<WebSiteVirtualDirectory> list)
+        {
+            metaName = String.Format("{0}/ROOT", metaName);
+            return list.Where(m => m.Name.StartsWith(metaName)).ToArray();
+        }
+
+        private List<WebSiteVirtualDirectory> LoadVirtualDirectories()
+        {
+            var list = new List<WebSiteVirtualDirectory>();
+
+            var _query = String.Format("SELECT * FROM IIsWebVirtualDirSetting");
+
+            using (var query = data.GetProperties(_query))
+            {
+                foreach (ManagementObject item in query)
+                {
+                    var v = new WebSiteVirtualDirectory();
+                    v.Name = data.GetValue<string>(item, "Name");
+                    v.Path = data.GetValue<string>(item, "Path");
+
+                    if (!v.Name.EndsWith("ROOT"))
+                        list.Add(v);
+                }
+            }
+
+            return list;
         }
 
         private WebSiteBinding[] GetDomainBindings(ManagementObject item)
