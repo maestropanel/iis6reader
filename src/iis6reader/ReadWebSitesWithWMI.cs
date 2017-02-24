@@ -82,7 +82,7 @@
             headers = new List<WebSiteCustomHeader>().ToArray();
             errors = new List<WebSiteCustomError>().ToArray();
             domainPath = String.Empty;
-            metaName = String.Format("{0}/root", metaName);
+            metaName = String.Format("{0}/ROOT", metaName);
 
             var _query = String.Format("SELECT * FROM IIsWebVirtualDirSetting WHERE Name = '{0}'", metaName);
 
@@ -102,8 +102,17 @@
 
         private WebSiteVirtualDirectory[] SearchInVirtualDirectories(string metaName,  List<WebSiteVirtualDirectory> list)
         {
+            var tmp = new List<WebSiteVirtualDirectory>();
+
             metaName = String.Format("{0}/ROOT", metaName);
-            return list.Where(m => m.Name.StartsWith(metaName)).ToArray();
+
+            foreach (var item in list.Where(m => m.Name.StartsWith(metaName)))
+            {
+                item.Name = item.Name.Replace(metaName, "");
+                tmp.Add(item);
+            }
+
+            return tmp.ToArray();            
         }
 
         private List<WebSiteVirtualDirectory> LoadVirtualDirectories()
@@ -120,8 +129,8 @@
                     v.Name = data.GetValue<string>(item, "Name");
                     v.Path = data.GetValue<string>(item, "Path");
 
-                    if (!v.Name.EndsWith("ROOT"))
-                        list.Add(v);
+                    if (!v.Name.EndsWith("ROOT"))                                            
+                        list.Add(v);                    
                 }
             }
 
@@ -735,7 +744,8 @@
 
         public List<WebSite> GetAllDomains()
         {
-            return GetAllDomains();
+            return GetAllDomains(where: "");
         }
+
     }
 }

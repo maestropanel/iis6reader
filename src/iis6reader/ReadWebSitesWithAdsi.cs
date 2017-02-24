@@ -266,9 +266,7 @@
                     continue;
 
                 var virtualPath = String.Format("{0}/{1}", parentPath, item.Name);
-
-                Console.WriteLine(virtualPath);
-
+                
                 var l = new WebSiteVirtualDirectory();
                 l.Name = virtualPath;
                 l.Path = GetValue<string>(item.Properties, "Path");
