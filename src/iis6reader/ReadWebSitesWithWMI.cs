@@ -86,6 +86,8 @@
 
             var _query = String.Format("SELECT * FROM IIsWebVirtualDirSetting WHERE Name = '{0}'", metaName);
 
+            Console.WriteLine(_query);
+
             using (var query = data.GetProperties(_query))
             {
                 foreach (ManagementObject item in query)

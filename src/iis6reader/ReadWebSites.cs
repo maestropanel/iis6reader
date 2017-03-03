@@ -14,7 +14,11 @@
         /// <param name="provider">wmi or adsi. Default wmi</param>
         public ReadWebSites(string provider)
         {
+            if (string.IsNullOrEmpty(provider))
+                provider = "wmi";
+
             this._provider = provider;
+
         }
 
         public ReadWebSites()
