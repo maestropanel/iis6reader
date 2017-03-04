@@ -56,8 +56,6 @@
                     
                     if (secureBindings.Any())  
                     {
-                        d.EnableSSL = true;
-
                         var list = d.Bindings.ToList();
                         list.AddRange(secureBindings);
 
@@ -84,9 +82,7 @@
             domainPath = String.Empty;
             metaName = String.Format("{0}/ROOT", metaName);
 
-            var _query = String.Format("SELECT * FROM IIsWebVirtualDirSetting WHERE Name = '{0}'", metaName);
-
-            Console.WriteLine(_query);
+            var _query = String.Format("SELECT * FROM IIsWebVirtualDirSetting WHERE Name = '{0}'", metaName);            
 
             using (var query = data.GetProperties(_query))
             {
@@ -185,7 +181,8 @@
                 b.Port = data.GetValue<string>(bind, "Port");
                 b.IpAddr = data.GetValue<string>(bind, "IP");
 
-                currentBinding.Add(b);
+                if (b.Port == "443")
+                    currentBinding.Add(b);                
             }
 
             return currentBinding.ToArray();
@@ -193,12 +190,12 @@
 
         private bool isSSLEnabled(ManagementObject item)
         {
-            var bindins = data.GetValue<ManagementBaseObject[]>(item, "SecureBindings");
             var result = false;
-
+            var bindins = data.GetValue<ManagementBaseObject[]>(item, "SecureBindings");
+            
             if (bindins == null)
                 return result;
-
+            
             foreach (ManagementBaseObject bind in bindins)
             {
                 var port = bind.GetPropertyValue("Port");
