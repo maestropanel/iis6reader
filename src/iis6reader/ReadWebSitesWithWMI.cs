@@ -1,7 +1,6 @@
 ﻿namespace maestropanel.iis6reader
 {
     using maestropanel.iis6reader.Models;
-    using Microsoft.Win32;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -23,7 +22,6 @@
 
             if (!String.IsNullOrEmpty(where))
                 _query += " WHERE " + where;
-
 
             var virtualDirs = LoadVirtualDirectories();
 

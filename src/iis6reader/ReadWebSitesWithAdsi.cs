@@ -24,7 +24,8 @@
                         d.UserName = GetValue<string>(de.Properties, "AnonymousUserName");
                         d.Password = GetValue<string>(de.Properties, "AnonymousUserPass");                        
                         d.Path = GetDomainPath(d.MetaName);
-                        
+                        d.VirtualDirectories = new List<WebSiteVirtualDirectory>().ToArray();
+
                         var serverState = GetValue<int>(de.Properties, "ServerState");
                         var serverBindings = GetWebSiteBindings(de.Properties["ServerBindings"]);
                         var secureBindings = GetWebSiteBindings(de.Properties["SecureBindings"], secureBinding: true);
