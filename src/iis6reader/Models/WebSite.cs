@@ -51,6 +51,7 @@
     public class WebSiteVirtualDirectory
     {        
         public string Name { get; set; }
-        public string Path { get; set; }        
+        public string Path { get; set; }
+        public bool isApplication { get; set; }
     }
 }

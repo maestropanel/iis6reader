@@ -271,6 +271,7 @@
                 var l = new WebSiteVirtualDirectory();
                 l.Name = virtualPath;
                 l.Path = GetValue<string>(item.Properties, "Path");
+                l.isApplication = (GetValue<uint>(item.Properties, "AccessFlasg") == 513);
 
                 list.Add(l);
 

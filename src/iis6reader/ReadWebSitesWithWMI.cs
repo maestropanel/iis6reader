@@ -124,9 +124,10 @@
                     var v = new WebSiteVirtualDirectory();
                     v.Name = data.GetValue<string>(item, "Name");
                     v.Path = data.GetValue<string>(item, "Path");
+                    v.isApplication = false;
 
-                    if (!v.Name.EndsWith("ROOT"))                                            
-                        list.Add(v);                    
+                    if (!v.Name.EndsWith("ROOT"))
+                        list.Add(v);            
                 }
             }
 
