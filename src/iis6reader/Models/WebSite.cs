@@ -8,12 +8,15 @@
         public bool EnableSSL { get; set; }
         public bool EnableDirBrowsing { get; set; }
         public string Path { get; set; }
+        public string DotNetRuntime { get; set; }
+        public string ApplicationPoolName { get; set; }
 
         public WebSiteCustomHeader[] Headers { get; set; }
         public WebSiteMimeType[] MimeTypes { get; set; }
         public WebSiteCustomError[] HttpErrors { get; set; }
         public WebSiteBinding[] Bindings { get; set; }
         public WebSiteVirtualDirectory[] VirtualDirectories { get; set; }
+        public string[] DefaultDocs { get; set; }
 
         public string UserName { get; set; }
         public string Password { get; set; }

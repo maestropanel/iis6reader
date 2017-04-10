@@ -49,14 +49,21 @@
 
                             if (vlist.Count > 0)
                                 d.VirtualDirectories = vlist.ToArray();
-                        }
 
+                            var items = GetWebSiteItems(rootApp);
+
+                            d.ApplicationPoolName = items.ApplicationPoolId;
+                            d.DefaultDocs = items.DefaultDocs;
+                            d.DotNetRuntime = items.DotNetRuntime;
+                        }
+                        
                         d.Bindings = bindings.ToArray();
                         d.Headers = GetWebSiteCustomHeader(de.Properties["HttpCustomHeaders"]);
                         d.HttpErrors = GetWebSiteCustomErrors(de.Properties["HttpErrors"]);
                         d.SSLCertHash = GetCertificateHash(de.Properties["SSLCertHash"]);
                         d.State = serverState.ToString();
-                        
+
+                                                
                         list.Add(d);
                     }
                 }
@@ -142,7 +149,6 @@
 
                     list.Add(b);
                 }
-
             }
 
             return list.ToArray();
@@ -150,7 +156,6 @@
 
         private WebSiteCustomHeader[] GetWebSiteCustomHeader(PropertyValueCollection headers)
         {
-
             var list = new List<WebSiteCustomHeader>();
 
             if (headers == null)
@@ -166,11 +171,10 @@
                     ch.Value = keyvalue[1].Trim();
 
                     list.Add(ch);
-                }                
+                }
             }
 
             return list.ToArray();
-
         }
 
         private WebSiteCustomError[] GetWebSiteCustomErrors(PropertyValueCollection errors)
@@ -248,6 +252,17 @@
             return _root;
         }
 
+        private WebSiteItems GetWebSiteItems(DirectoryEntry children)
+        {
+            var witem = new WebSiteItems();
+
+            witem.ApplicationPoolId = GetValue<string>(children.Properties, "AppPoolId");
+            witem.DotNetRuntime = GetDotNetVersion(children);
+            witem.DefaultDocs = GetDefaultDocs(children);
+
+            return witem;
+        }
+
         private List<WebSiteVirtualDirectory> GetVirtualDirectories(string parentPath, DirectoryEntries children, string parentKey)
         {
             var list = new List<WebSiteVirtualDirectory>();
@@ -280,5 +295,80 @@
 
             return list;
         }
-    }    
+
+        private string[] GetDefaultDocs(DirectoryEntry children)
+        {
+            var list = new List<string>();
+            var default_docs = children.Properties["DefaultDoc"];
+
+            if (default_docs == null)
+                return list.ToArray();
+            
+            foreach (var item in default_docs)
+            {
+                var docs = item.ToString();
+                if (!String.IsNullOrEmpty(docs))
+                {
+                    return docs.Split(',');
+                }                
+            }
+            
+            return list.ToArray();
+        }
+
+        private string GetDotNetVersion(DirectoryEntry children)
+        {
+            var runtime = "unknown";            
+
+            var scriptMapes = children.Properties["ScriptMaps"];
+
+            if (scriptMapes == null)
+                return runtime;
+
+            foreach (var item in scriptMapes)
+            {
+                var scriptItem = item.ToString();
+
+                //.aspx,c:\windows\microsoft.net\framework\v4.0.30319\aspnet_isapi.dll,1,GET,HEAD,POST,DEBUG
+                if (scriptItem.StartsWith(".aspx"))
+                {
+                    
+                    if (scriptItem.IndexOf("v1.0") != -1)
+                    {
+                        runtime = "v1.0";
+                        break;
+                    }
+
+                    if (scriptItem.IndexOf("v1.1") != -1)
+                    {
+                        runtime = "v1.1";
+                        break;
+                    }
+
+                    if (scriptItem.IndexOf("v2.0") != -1)
+                    {
+                        runtime = "v2.0";
+                        break;
+                    }
+
+                    if (scriptItem.IndexOf("v4.0") != -1)
+                    {
+                        runtime = "v4.0";
+                        break;
+                    }
+
+                    break;
+                }
+            }
+
+            return runtime;
+        }  
+    }
+
+    struct WebSiteItems
+    {
+        public string DotNetRuntime { get; set; }
+        public string ApplicationPoolId { get; set; }
+        public string[] DefaultDocs { get; set; }
+    }
 }

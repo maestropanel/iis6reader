@@ -39,7 +39,7 @@
                     d.MetaName = data.GetValue<string>(item, "Name");
                     d.UserName = data.GetValue<string>(item, "AnonymousUserName");
                     d.Password = data.GetValue<string>(item, "AnonymousUserPass");
-                                                            
+                                                                                
                     GetDomainPath(d.MetaName, out domainPath, out customErrors, out customHeaders, out customMimes);
 
                     d.HttpErrors = customErrors;
@@ -64,7 +64,11 @@
 
                     if (d.EnableSSL)                    
                         d.SSLCertHash = GetCertificateHash(d.MetaName);
-                    
+
+                    d.DefaultDocs = GetDefaultDocs(item);
+                    d.ApplicationPoolName = data.GetValue<string>(item, "AppPoolId");
+                    d.DotNetRuntime = GetDotNetRuntimeVersion(d.ApplicationPoolName);
+
                     tmp.Add(d);
                 }
             }
@@ -743,6 +747,40 @@
         public List<WebSite> GetAllDomains()
         {
             return GetAllDomains(where: "");
+        }
+
+        private string[] GetDefaultDocs(ManagementObject item)
+        {
+            var list = new List<string>();
+            var docs = data.GetValue<string>(item, "DefaultDoc");
+
+            //Default.htm,Default.html,Default.asp,Default.aspx,Default.php,index.htm,index.html,index.asp,index.aspx,index.php
+            if (!String.IsNullOrEmpty(docs))
+                return docs.Split(',');
+
+            return list.ToArray();
+        }
+
+        public string GetDotNetRuntimeVersion(string applicationPoolId)
+        {
+            var defaultRuntime = "v2.0";
+
+            var _query = String.Format("SELECT ManagedRuntimeVersion FROM IIsApplicationPoolSetting WHERE Name ='W3SVC/APPPOOLS/{0}'", applicationPoolId);
+
+            using (var query = data.GetProperties(_query))
+            {
+                foreach (ManagementObject item in query)
+                {
+                    var runtime = data.GetValue<string>(item, "ManagedRuntimeVersion");
+
+                    if (!String.IsNullOrEmpty(runtime))
+                        defaultRuntime = runtime;
+
+                    break;
+                }
+            }
+
+            return defaultRuntime;
         }
 
     }
