@@ -33,14 +33,15 @@
                     WebSiteCustomError[] customErrors;
                     WebSiteCustomHeader[] customHeaders;
                     WebSiteMimeType[] customMimes;
+                    var applicationPoolId = String.Empty;
 
                     var d = new WebSite();
                     d.Name = data.GetValue<string>(item, "ServerComment");
                     d.MetaName = data.GetValue<string>(item, "Name");
                     d.UserName = data.GetValue<string>(item, "AnonymousUserName");
                     d.Password = data.GetValue<string>(item, "AnonymousUserPass");
-                                                                                
-                    GetDomainPath(d.MetaName, out domainPath, out customErrors, out customHeaders, out customMimes);
+
+                    GetDomainPath(d.MetaName, out domainPath, out customErrors, out customHeaders, out customMimes, out applicationPoolId);
 
                     d.HttpErrors = customErrors;
                     d.MimeTypes = customMimes;
@@ -66,9 +67,13 @@
                         d.SSLCertHash = GetCertificateHash(d.MetaName);
 
                     d.DefaultDocs = GetDefaultDocs(item);
-                    d.ApplicationPoolName = data.GetValue<string>(item, "AppPoolId");
-                    d.DotNetRuntime = GetDotNetRuntimeVersion(d.ApplicationPoolName);
+                    d.ApplicationPoolName = applicationPoolId;
+                    
+                    var appPool = GetApplicationPoolSettings(d.ApplicationPoolName);
 
+                    d.ApplicationPoolMode = appPool.ApplicationMode;
+                    d.DotNetRuntime = appPool.RuntimeVersion;
+                    
                     tmp.Add(d);
                 }
             }
@@ -76,13 +81,16 @@
             return tmp;
         }
 
-        private void GetDomainPath(string metaName, out string domainPath, out WebSiteCustomError[] errors, out WebSiteCustomHeader[] headers, out WebSiteMimeType[] mimes)
+        //default.html,index.aspx,index.asp,Default.htm,Default.asp,index.htm,index.html,iisstart.htm,default.aspx
+
+        private void GetDomainPath(string metaName, out string domainPath, out WebSiteCustomError[] errors, out WebSiteCustomHeader[] headers, out WebSiteMimeType[] mimes, out string applicationPoolId)
         {
             mimes = new List<WebSiteMimeType>().ToArray();
             headers = new List<WebSiteCustomHeader>().ToArray();
             errors = new List<WebSiteCustomError>().ToArray();
             domainPath = String.Empty;
             metaName = String.Format("{0}/ROOT", metaName);
+            applicationPoolId = String.Empty;
 
             var _query = String.Format("SELECT * FROM IIsWebVirtualDirSetting WHERE Name = '{0}'", metaName);            
 
@@ -94,6 +102,7 @@
                     errors = GetErrorPages(item);
                     headers = GetCustomHeaders(item);
                     mimes = GetMimeTypes(item);
+                    applicationPoolId = data.GetValue<string>(item, "AppPoolId");
 
                     break;
                 }
@@ -754,34 +763,83 @@
             var list = new List<string>();
             var docs = data.GetValue<string>(item, "DefaultDoc");
 
-            //Default.htm,Default.html,Default.asp,Default.aspx,Default.php,index.htm,index.html,index.asp,index.aspx,index.php
-            if (!String.IsNullOrEmpty(docs))
-                return docs.Split(',');
+            if (docs == null)
+                return list.ToArray();
+            
+            if (!String.IsNullOrEmpty(docs))            
+                list.AddRange(docs.Split(','));
 
-            return list.ToArray();
+            return DefaultDocsDiff(list).ToArray();
         }
 
-        public string GetDotNetRuntimeVersion(string applicationPoolId)
+        private List<string> DefaultDocsDiff(List<string> list2)
         {
-            var defaultRuntime = "v2.0";
+            var diffList = new List<string>();
+            var list1 = DefaultDocs();
 
-            var _query = String.Format("SELECT ManagedRuntimeVersion FROM IIsApplicationPoolSetting WHERE Name ='W3SVC/APPPOOLS/{0}'", applicationPoolId);
+            foreach (var item in list2)
+            {
+                var litem = item.ToLower();
+                var isExists = list1.Contains(litem);
+                if (!isExists)
+                {
+                    diffList.Add(litem);
+                }
+            }
+
+            return diffList;
+        }
+
+        private List<string> DefaultDocs()
+        {
+            var l = new List<string>();
+            l.Add("default.htm");
+            l.Add("default.html");
+            l.Add("default.asp");
+            l.Add("default.aspx");
+            l.Add("default.php");
+            l.Add("index.htm");
+            l.Add("index.html");
+            l.Add("index.asp");
+            l.Add("index.aspx");
+            l.Add("index.php");
+            l.Add("iisstart.htm");
+
+            return l;
+        }
+
+        public WebItems GetApplicationPoolSettings(string applicationPoolId)
+        {
+            var result = new WebItems();
+            
+            var _query = String.Format("SELECT * FROM IIsApplicationPoolSetting WHERE Name ='W3SVC/APPPOOLS/{0}'", applicationPoolId);
 
             using (var query = data.GetProperties(_query))
             {
                 foreach (ManagementObject item in query)
                 {
                     var runtime = data.GetValue<string>(item, "ManagedRuntimeVersion");
+                    var runtimeMode = data.GetValue<int>(item, "ManagedPipelineMode");
 
                     if (!String.IsNullOrEmpty(runtime))
-                        defaultRuntime = runtime;
+                        result.RuntimeVersion = runtime;
+
+                    if (runtimeMode == 0)
+                        result.ApplicationMode = "integrated";
+                    else
+                        result.ApplicationMode = "classic";
 
                     break;
                 }
             }
 
-            return defaultRuntime;
+            return result;
         }
+    }
 
+    struct WebItems
+    {
+        public string RuntimeVersion { get; set; }
+        public string ApplicationMode { get; set; }
     }
 }

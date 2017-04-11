@@ -56,6 +56,10 @@
                             d.DefaultDocs = items.DefaultDocs;
                             d.DotNetRuntime = items.DotNetRuntime;
                         }
+                        else
+                        {
+                            d.DefaultDocs = new List<string>().ToArray();                            
+                        }
                         
                         d.Bindings = bindings.ToArray();
                         d.Headers = GetWebSiteCustomHeader(de.Properties["HttpCustomHeaders"]);
@@ -299,6 +303,8 @@
         private string[] GetDefaultDocs(DirectoryEntry children)
         {
             var list = new List<string>();
+            var defaultDocsTemplate = DefaultDocs();
+
             var default_docs = children.Properties["DefaultDoc"];
 
             if (default_docs == null)
@@ -309,11 +315,47 @@
                 var docs = item.ToString();
                 if (!String.IsNullOrEmpty(docs))
                 {
-                    return docs.Split(',');
-                }                
+                    list.AddRange(docs.Split(','));
+                    break;
+                }
             }
-            
-            return list.ToArray();
+
+            return DefaultDocsDiff(list).ToArray();
+        }
+
+        private List<string> DefaultDocsDiff(List<string> list2)
+        {
+            var diffList = new List<string>();
+            var list1 = DefaultDocs();
+
+            foreach (var item in list2)
+            {
+                var litem = item.ToLower();
+                var isExists = list1.Contains(litem);
+                if (!isExists)
+                {
+                    diffList.Add(litem);
+                }
+            }
+
+            return diffList;
+        }
+
+        private List<string> DefaultDocs()
+        {
+            var l = new List<string>();
+            l.Add("default.htm");
+            l.Add("default.html");
+            l.Add("default.asp");
+            l.Add("default.aspx");
+            l.Add("default.php");
+            l.Add("index.htm");
+            l.Add("index.html");
+            l.Add("index.asp");
+            l.Add("index.aspx");
+            l.Add("index.php");
+
+            return l;
         }
 
         private string GetDotNetVersion(DirectoryEntry children)

@@ -10,7 +10,8 @@
         public string Path { get; set; }
         public string DotNetRuntime { get; set; }
         public string ApplicationPoolName { get; set; }
-
+        public string ApplicationPoolMode { get; set; }
+        
         public WebSiteCustomHeader[] Headers { get; set; }
         public WebSiteMimeType[] MimeTypes { get; set; }
         public WebSiteCustomError[] HttpErrors { get; set; }
