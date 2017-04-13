@@ -192,9 +192,8 @@
                 b.Hostname = data.GetValue<string>(bind, "Hostname");
                 b.Port = data.GetValue<string>(bind, "Port");
                 b.IpAddr = data.GetValue<string>(bind, "IP");
-
-                if (b.Port == "443")
-                    currentBinding.Add(b);                
+                
+                currentBinding.Add(b);                
             }
 
             return currentBinding.ToArray();
@@ -214,7 +213,7 @@
 
                 if (port != null)
                 {
-                    if (port.ToString() == "443")
+                    if (port.ToString().StartsWith("443"))
                     {
                         result = true;
                         break;
@@ -820,9 +819,8 @@
                 {
                     var runtime = data.GetValue<string>(item, "ManagedRuntimeVersion");
                     var runtimeMode = data.GetValue<int>(item, "ManagedPipelineMode");
-
-                    if (!String.IsNullOrEmpty(runtime))
-                        result.RuntimeVersion = runtime;
+                    
+                    result.RuntimeVersion = String.IsNullOrEmpty(runtime) ? "v2.0": runtime;
 
                     if (runtimeMode == 0)
                         result.ApplicationMode = "integrated";
