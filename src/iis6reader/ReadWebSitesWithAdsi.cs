@@ -55,15 +55,18 @@
                             d.ApplicationPoolName = items.ApplicationPoolId;
                             d.DefaultDocs = items.DefaultDocs;
                             d.DotNetRuntime = items.DotNetRuntime;
+                            
+                            d.HttpErrors = GetWebSiteCustomErrors(rootApp.Properties["HttpErrors"]);
                         }
                         else
                         {
-                            d.DefaultDocs = new List<string>().ToArray();                            
+                            d.DefaultDocs = new List<string>().ToArray();
+                            d.HttpErrors = GetWebSiteCustomErrors(de.Properties["HttpErrors"]);
                         }
                         
                         d.Bindings = bindings.ToArray();
                         d.Headers = GetWebSiteCustomHeader(de.Properties["HttpCustomHeaders"]);
-                        d.HttpErrors = GetWebSiteCustomErrors(de.Properties["HttpErrors"]);
+                        
                         d.SSLCertHash = GetCertificateHash(de.Properties["SSLCertHash"]);
                         d.State = serverState.ToString();
 
@@ -190,7 +193,7 @@
 
             //404,*,URL,/404.asp
             foreach (var item in errors)
-            {
+            {                
                 var customPage = item.ToString().Split(',');
                 if (customPage.Length == 4)
                 {

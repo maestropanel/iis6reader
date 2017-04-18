@@ -43,7 +43,7 @@
 
                     GetDomainPath(d.MetaName, out domainPath, out customErrors, out customHeaders, out customMimes, out applicationPoolId);
 
-                    d.HttpErrors = customErrors;
+                    //d.HttpErrors = customErrors;
                     d.MimeTypes = customMimes;
                     d.Headers = customHeaders;
                     d.Path = domainPath;
@@ -74,6 +74,8 @@
                     d.ApplicationPoolMode = appPool.ApplicationMode;
                     d.DotNetRuntime = appPool.RuntimeVersion;
                     
+                    d.HttpErrors = GetErrorPages(item);
+                    
                     tmp.Add(d);
                 }
             }
@@ -99,7 +101,7 @@
                 foreach (ManagementObject item in query)
                 {                    
                     domainPath = data.GetValue<string>(item, "Path");
-                    errors = GetErrorPages(item);
+                    //errors = GetErrorPages(item);
                     headers = GetCustomHeaders(item);
                     mimes = GetMimeTypes(item);
                     applicationPoolId = data.GetValue<string>(item, "AppPoolId");
@@ -275,12 +277,6 @@
             if (errors == null)
                 return list.ToArray();
 
-            if (!errors.Any())
-                return list.ToArray();
-
-            if (errors.Count() < 3)
-                return list.ToArray();
-
             foreach (ManagementBaseObject error in errors)
             {
                 var err = new WebSiteCustomError();
@@ -290,12 +286,12 @@
                 //for IIS 6: File, URL
                 err.HandlerType = error.GetPropertyValue("HandlerType").ToString();
                 err.HttpErrorCode = error.GetPropertyValue("HttpErrorCode").ToString();
-                err.HttpErrorSubcode = error.GetPropertyValue("HttpErrorSubcode").ToString();
+                err.HttpErrorSubcode = error.GetPropertyValue("HttpErrorSubcode").ToString();                
 
                 if (err.HandlerType == "URL")
                 {
                     err.HandlerType = "ExecuteURL";
-                    list.Add(err);
+                    list.Add(err);                    
                 }
             }
 
