@@ -104,14 +104,29 @@
         {
             var exists = false;
 
-            foreach (var item in source.PropertyNames)
+            if (source == null)
             {
-                if (item.ToString() == name)
-                {
-                    exists = true;
-                    break;
-                }
+                return exists;
             }
+
+            if(String.IsNullOrEmpty(name)) {
+                return exists;
+            }
+
+            try
+            {
+                foreach (var item in source.PropertyNames)
+                {
+                    if (item.ToString() == name)
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+
+            }
+            catch
+            {}
 
             return exists;
         }
@@ -289,7 +304,7 @@
                     continue;
 
                 var virtualPath = String.Format("{0}/{1}", parentPath, item.Name);
-                
+                                
                 var l = new WebSiteVirtualDirectory();
                 l.Name = virtualPath;
                 l.Path = GetValue<string>(item.Properties, "Path");
