@@ -8,76 +8,6 @@
 
     internal class ReadWebSitesWithAdsi : IReadWebSite
     {
-        public List<WebSite> GetAllDomains()
-        {
-            var list = new List<WebSite>();
-
-            using (DirectoryEntry w3svc = new DirectoryEntry("IIS://localhost/W3SVC"))
-            {
-                foreach (DirectoryEntry de in w3svc.Children)
-                {
-                    if (de.SchemaClassName == "IIsWebServer")
-                    {                        
-                        var d = new WebSite();
-                        d.Name = GetValue<string>(de.Properties, "ServerComment");
-                        d.MetaName = de.Name;
-                        d.UserName = GetValue<string>(de.Properties, "AnonymousUserName");
-                        d.Password = GetValue<string>(de.Properties, "AnonymousUserPass");                        
-                        d.Path = GetDomainPath(d.MetaName);
-                        d.VirtualDirectories = new List<WebSiteVirtualDirectory>().ToArray();
-
-                        var serverState = GetValue<int>(de.Properties, "ServerState");
-                        var serverBindings = GetWebSiteBindings(de.Properties["ServerBindings"]);
-                        var secureBindings = GetWebSiteBindings(de.Properties["SecureBindings"], secureBinding: true);
-
-                        var bindings = new List<WebSiteBinding>();
-                        
-                        if (serverBindings.Length > 0)
-                            bindings.AddRange(serverBindings);
-
-                        if (secureBindings.Length > 0)
-                        {
-                            bindings.AddRange(secureBindings);
-                            d.EnableSSL = true;
-                        }
-
-                        var rootApp = GetRoot(de.Children);
-
-                        if (rootApp != null)
-                        {
-                            var vlist = GetVirtualDirectories("", rootApp.Children, "");
-
-                            if (vlist.Count > 0)
-                                d.VirtualDirectories = vlist.ToArray();
-
-                            var items = GetWebSiteItems(rootApp);
-
-                            d.ApplicationPoolName = items.ApplicationPoolId;
-                            d.DefaultDocs = items.DefaultDocs;
-                            d.DotNetRuntime = items.DotNetRuntime;
-                            
-                            d.HttpErrors = GetWebSiteCustomErrors(rootApp.Properties["HttpErrors"]);
-                        }
-                        else
-                        {
-                            d.DefaultDocs = new List<string>().ToArray();
-                            d.HttpErrors = GetWebSiteCustomErrors(de.Properties["HttpErrors"]);
-                        }
-                        
-                        d.Bindings = bindings.ToArray();
-                        d.Headers = GetWebSiteCustomHeader(de.Properties["HttpCustomHeaders"]);
-                        
-                        d.SSLCertHash = GetCertificateHash(de.Properties["SSLCertHash"]);
-                        d.State = serverState.ToString();
-
-                                                
-                        list.Add(d);
-                    }
-                }
-            }
-
-            return list;
-        }
 
         private T GetValue<T>(PropertyCollection source, string name)
         {
@@ -138,11 +68,12 @@
             using (DirectoryEntry w3svc = new DirectoryEntry(String.Format("IIS://localhost/W3SVC/{0}", metaname)))
             {
                 foreach (DirectoryEntry de in w3svc.Children)
-                {                    
-                    path = GetValue<string>(de.Properties, "Path");
-
+                {
                     if (de.Name == "Path")
+                    {
+                        path = GetValue<string>(de.Properties, "Path");
                         break;
+                    }                    
                 }
             }
 
@@ -253,8 +184,87 @@
         }
         
         public List<WebSite> GetAllDomains(string where = "")
-        {            
-            return GetAllDomains();
+        {
+            var list = new List<WebSite>();
+
+            using (DirectoryEntry w3svc = new DirectoryEntry("IIS://localhost/W3SVC"))
+            {
+                foreach (DirectoryEntry de in w3svc.Children)
+                {
+                    if (de.SchemaClassName == "IIsWebServer")
+                    {
+
+                        var d = new WebSite();
+                        d.Name = GetValue<string>(de.Properties, "ServerComment");
+
+                        if (!String.IsNullOrEmpty(where))
+                        {
+                            if (d.Name != where)
+                                continue;
+                        }
+                                                
+                        d.MetaName = de.Name;
+                        d.UserName = GetValue<string>(de.Properties, "AnonymousUserName");
+                        d.Password = GetValue<string>(de.Properties, "AnonymousUserPass");
+                        d.Path = GetDomainPath(d.MetaName);
+                        d.VirtualDirectories = new List<WebSiteVirtualDirectory>().ToArray();
+
+                        var serverState = GetValue<int>(de.Properties, "ServerState");
+                        var serverBindings = GetWebSiteBindings(de.Properties["ServerBindings"]);
+                        var secureBindings = GetWebSiteBindings(de.Properties["SecureBindings"], secureBinding: true);
+
+                        var bindings = new List<WebSiteBinding>();
+
+                        if (serverBindings.Length > 0)
+                            bindings.AddRange(serverBindings);
+
+                        if (secureBindings.Length > 0)
+                        {
+                            bindings.AddRange(secureBindings);
+                            d.EnableSSL = true;
+                        }
+
+                        var rootApp = GetRoot(de.Children);
+
+                        if (rootApp != null)
+                        {
+                            var vlist = GetVirtualDirectories("", rootApp.Children, "");
+
+                            if (vlist.Count > 0)
+                                d.VirtualDirectories = vlist.ToArray();
+
+                            var items = GetWebSiteItems(rootApp);
+
+                            d.ApplicationPoolName = items.ApplicationPoolId;
+                            d.DefaultDocs = items.DefaultDocs;
+                            d.DotNetRuntime = items.DotNetRuntime;
+
+                            d.HttpErrors = GetWebSiteCustomErrors(rootApp.Properties["HttpErrors"]);
+                        }
+                        else
+                        {
+                            d.DefaultDocs = new List<string>().ToArray();
+                            d.HttpErrors = GetWebSiteCustomErrors(de.Properties["HttpErrors"]);
+                        }
+
+                        d.Bindings = bindings.ToArray();
+                        d.Headers = GetWebSiteCustomHeader(de.Properties["HttpCustomHeaders"]);
+
+                        d.SSLCertHash = GetCertificateHash(de.Properties["SSLCertHash"]);
+                        d.State = serverState.ToString();                        
+
+
+                        list.Add(d);
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        public List<WebSite> GetAllDomains()
+        {
+            return GetAllDomains(where: "");
         }
 
         private DirectoryEntry GetRoot(DirectoryEntries children)
@@ -422,7 +432,9 @@
             }
 
             return runtime;
-        }  
+        }
+
+
     }
 
     struct WebSiteItems
